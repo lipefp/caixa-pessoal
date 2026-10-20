@@ -88,10 +88,6 @@ icon.svg               ícone
 - [ ] API própria em Django REST como alternativa ao Supabase
 - [ ] Gráfico de evolução da sobra mês a mês
 
-## Créditos
-
-Construído com auxílio do Claude (Anthropic).
-
 ## Licença
 
 [MIT](LICENSE)
