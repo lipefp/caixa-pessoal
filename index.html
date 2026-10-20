@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EEF2EA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1512" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Livro-caixa pessoal: quanto entrou, pra onde foi, quanto sobrou.">
+<title>Caixa</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Livro-caixa: pauta verde, margem vermelha nos números principais, linha de soma nos totais. Uma coluna, mobile-first. */
+:root {
+  --bg: #EEF2EA;
+  --surface: #F7FAF5;
+  --ink: #1B2620;
+  --muted: #56635C;
+  --line: #CFD9D0;
+  --track: #E2E9E3;
+  --accent: #25603F;
+  --accent-soft: #DCE8DF;
+  --margin: #C2492F;
+  --in: #25603F;
+  --out: #A63D2A;
+  --save: #7A5C0E;
+  --save-soft: #EFE4C6;
+  --fat: #4F5B57;
+  --warn: #8A4F00;
+  --dash: #8A978F;
+  --btn: #1B2620;
+  --btn-ink: #F7FAF5;
+  --shadow: rgba(27, 38, 32, 0.22);
+  --display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1512; --surface: #18201B; --ink: #E4EBE6; --muted: #9AA8A0; --line: #2A3530; --track: #222C26;
+    --accent: #6CC497; --accent-soft: #23362B; --margin: #EE9580; --in: #6CC497; --out: #EE9580; --save: #D8BC6A; --save-soft: #2E2A1A;
+    --fat: #A9B5B0; --warn: #E3A64A; --dash: #5E6B64; --btn: #E4EBE6; --btn-ink: #0F1512; --shadow: rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1512; --surface: #18201B; --ink: #E4EBE6; --muted: #9AA8A0; --line: #2A3530; --track: #222C26;
+  --accent: #6CC497; --accent-soft: #23362B; --margin: #EE9580; --in: #6CC497; --out: #EE9580; --save: #D8BC6A; --save-soft: #2E2A1A;
+  --fat: #A9B5B0; --warn: #E3A64A; --dash: #5E6B64; --btn: #E4EBE6; --btn-ink: #0F1512; --shadow: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 20px calc(110px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 16px; }
+h1, h2 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; font-weight: 600; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+button { font: inherit; color: inherit; cursor: pointer; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.monthnav { display: flex; align-items: center; gap: 4px; }
+.monthnav button { background: none; border: 1px solid var(--line); border-radius: 10px; width: 44px; height: 44px; font-size: 1.2rem; }
+.monthnav span { min-width: 120px; text-align: center; font-weight: 600; }
+
+.status { font-size: 0.85rem; color: var(--warn); }
+.status:empty { display: none; }
+
+.view { display: grid; gap: 16px; }
+.ledger { position: relative; padding-left: 30px !important; }
+.ledger::before { content: ""; position: absolute; left: 16px; top: 0; bottom: 0; width: 2px; background: var(--margin); }
+.sobra { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; display: grid; gap: 4px; }
+.sobra .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 2.4rem; font-weight: 500; line-height: 1.1; }
+.sobra .sub { font-size: 0.8rem; color: var(--muted); }
+.summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.summary > div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.summary .k { font-size: 0.78rem; color: var(--muted); }
+.summary .v { font-family: var(--mono); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.summary .sub { font-size: 0.72rem; color: var(--muted); }
+#sEntrou { color: var(--in); } #sGastou { color: var(--out); } #sGuardou { color: var(--save); } #sFatura { color: var(--fat); }
+@media (min-width: 560px) { .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.extrato-btn { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 16px; min-height: 52px; font-weight: 600; text-align: left; }
+.extrato-btn span:first-child { flex: 1; }
+.extrato-btn::after { content: "\203A"; font-size: 1.3rem; color: var(--muted); }
+.back { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; }
+.fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 20; display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--accent); color: var(--surface); font-weight: 600; box-shadow: 0 6px 16px var(--shadow); }
+.fab svg { width: 18px; height: 18px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+.lancar-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { background: none; border: 0; min-height: 44px; padding: 0 4px; font-size: 0.9rem; font-weight: 500; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.valor-box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px 10px; display: grid; gap: 2px; }
+.valor-box input { font-family: var(--mono); font-size: 2.3rem; border: 0; background: transparent; padding: 0; width: 100%; min-width: 0; color: var(--ink); }
+.valor-box input:focus-visible { outline: none; }
+.valor-box:focus-within { border-color: var(--accent); }
+.fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.fields .full { grid-column: 1 / -1; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 0.8rem; color: var(--muted); }
+input, select { font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%; min-width: 0; }
+input[type="date"] { font-family: var(--mono); font-size: 15px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { background: none; border: 1px dashed var(--dash); border-radius: 999px; padding: 0 14px; min-height: 40px; font-size: 0.88rem; color: var(--ink); }
+.chip:hover { border-color: var(--accent); }
+.salvar-bar { position: sticky; bottom: env(safe-area-inset-bottom, 0px); padding-block: 12px; background: var(--bg); border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.primary { background: var(--btn); color: var(--btn-ink); border: 0; border-radius: 12px; min-height: 54px; font-size: 1rem; font-weight: 600; width: 100%; }
+.primary.small-btn { min-height: 40px; width: auto; padding: 0 16px; font-size: 0.9rem; }
+.primary:disabled { opacity: 0.5; cursor: default; }
+.formmsg { font-size: 0.85rem; min-height: 1.2em; color: var(--muted); }
+.hint { font-size: 0.82rem; color: var(--muted); font-style: italic; }
+
+.cats { display: grid; gap: 10px; }
+.cat { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 0.88rem; }
+.bar { height: 8px; background: var(--track); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--out); border-radius: 2px; }
+.cat-total { border-top: 2px solid var(--ink); padding-top: 8px; display: flex; justify-content: space-between; font-size: 0.88rem; font-weight: 600; }
+
+.metas { display: grid; }
+.meta { border-top: 1px solid var(--line); padding-block: 14px; display: grid; gap: 8px; }
+.meta:first-child { border-top: 0; padding-top: 2px; }
+.meta.paused { opacity: 0.7; }
+.meta-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.meta-name { font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
+.meta-name .ord { font-family: var(--mono); color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+.pill { font-size: 0.75rem; font-weight: 500; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill.ok { background: var(--accent-soft); color: var(--in); }
+.pill.late { background: var(--save-soft); color: var(--warn); }
+.pill.quiet { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.pill.paused { background: transparent; border: 1px dashed var(--dash); color: var(--muted); }
+.prog { height: 10px; border-radius: 3px; overflow: hidden; background: repeating-linear-gradient(90deg, var(--track) 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%); }
+.prog i { display: block; height: 100%; background: var(--save); border-radius: 3px; }
+.meta-foot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+.meta-foot b { color: var(--ink); font-weight: 500; font-family: var(--mono); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-size: 0.85rem; text-decoration: underline; text-underline-offset: 2px; min-height: 32px; }
+.edit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.edit .acts { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.small { font-size: 0.8rem; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 0.95rem; min-height: 44px; color: var(--ink) !important; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.comp { display: grid; }
+.comp-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.comp-row:last-child { border-bottom: 0; }
+.comp-row .meta-line { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); }
+.months { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.mcell { display: grid; gap: 4px; text-align: center; font-size: 0.75rem; color: var(--muted); }
+.mcell .col { height: 56px; display: flex; align-items: flex-end; border: 1px dashed var(--dash); border-radius: 4px; overflow: hidden; }
+.mcell .col i { display: block; width: 100%; background: var(--out); opacity: 0.35; }
+.mcell b { font-family: var(--mono); font-weight: 500; color: var(--ink); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+
+.list { display: grid; }
+.day { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); padding: 14px 0 4px; text-transform: capitalize; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.row .d { min-width: 0; }
+.row .d div:first-child { overflow-wrap: anywhere; }
+.row .d div + div { font-size: 0.78rem; color: var(--muted); }
+.row .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.amt.entrada { color: var(--in); }
+.amt.gasto { color: var(--out); }
+.amt.guardado { color: var(--save); }
+.amt.fatura { color: var(--fat); }
+.amt.prevista { color: var(--muted); border: 1px dashed var(--dash); border-radius: 6px; padding: 1px 7px; }
+.del { background: none; border: 0; color: var(--muted); min-width: 36px; min-height: 36px; border-radius: 8px; font-size: 0.85rem; }
+.del.confirm { color: var(--out); font-weight: 600; }
+.empty { color: var(--muted); font-size: 0.9rem; padding: 6px 0; }
+.foot { font-size: 0.8rem; color: var(--muted); font-style: italic; margin: 0; }
+@media (max-width: 420px) { .cat { grid-template-columns: 92px minmax(0, 1fr) auto; } .sobra .v { font-size: 2.1rem; } }
+@media (prefers-reduced-motion: no-preference) { .prog i, .bar i { transition: width 0.4s ease; } }
+.login { max-width: 380px; margin: 8vh auto 0; display: grid; gap: 14px; }
+.login p { margin: 0; color: var(--muted); }
+.acoes { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.nova-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: end; border-top: 1px solid var(--line); padding-top: 12px; }
+.nova-meta .full { grid-column: 1 / -1; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Caixa</h1>
+    <div class="monthnav" id="monthnav">
+      <button id="prev" aria-label="Mês anterior">&#8249;</button>
+      <span id="monthLabel">—</span>
+      <button id="next" aria-label="Próximo mês">&#8250;</button>
+    </div>
+  </header>
+  <div class="status" id="status">Conectando ao banco de dados…</div>
+
+  <div class="view" id="view-login" hidden>
+    <form class="login panel" id="loginForm" novalidate>
+      <h2 style="font-size: 1.4rem">Entrar</h2>
+      <p>Seus lançamentos ficam numa conta só sua. Ninguém mais lê esses dados.</p>
+      <div class="field"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required></div>
+      <button class="primary" id="entrar" type="submit">Entrar</button>
+      <div class="formmsg" id="loginMsg" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <div class="view" id="view-main" hidden>
+    <section class="sobra ledger" aria-label="Sobra na conta">
+      <span class="label">Sobra na conta</span>
+      <span class="v" id="sSobra">R$ 0,00</span>
+      <span class="sub">entrou − gastos da conta − guardado − faturas pagas</span>
+    </section>
+    <section class="summary" aria-label="Resumo do mês">
+      <div><span class="k">+ Entrou</span><span class="v" id="sEntrou">R$ 0,00</span></div>
+      <div><span class="k">− Gastou</span><span class="v" id="sGastou">R$ 0,00</span></div>
+      <div><span class="k">→ Guardou</span><span class="v" id="sGuardou">R$ 0,00</span></div>
+      <div><span class="k">= Fatura em aberto</span><span class="v" id="sFatura">R$ 0,00</span><span class="sub" id="sFaturaSub"></span></div>
+    </section>
+    <button type="button" class="extrato-btn" id="abrirExtrato"><span>Extrato e para onde foi</span><span class="small muted" id="extratoCount"></span></button>
+    <section class="panel" aria-labelledby="compTitle">
+      <h2 id="compTitle">Parcelas já comprometidas</h2>
+      <div class="months" id="months"></div>
+      <div class="comp" id="comp"><div class="empty">Nenhum parcelamento lançado. Marque "Compra parcelada" ao lançar um gasto.</div></div>
+    </section>
+    <section class="panel" aria-labelledby="metasTitle">
+      <div class="meta-head"><h2 id="metasTitle">Metas</h2><button type="button" class="linkbtn" id="novaMetaBtn">+ Nova meta</button></div>
+      <form class="nova-meta" id="novaMetaForm" hidden novalidate>
+        <div class="field full"><label for="nmNome">Nome</label><input id="nmNome" placeholder="Ex.: Reserva de emergência" autocomplete="off"></div>
+        <div class="field"><label for="nmAlvo">Alvo (R$)</label><input id="nmAlvo" inputmode="decimal" placeholder="0,00"></div>
+        <div class="field"><label for="nmPrazo">Prazo (opcional)</label><input id="nmPrazo" type="month"></div>
+        <div class="field"><label for="nmIni">Já tinha (R$)</label><input id="nmIni" inputmode="decimal" placeholder="0,00"></div>
+        <div class="acoes full"><button class="primary small-btn" type="submit">Criar meta</button><button type="button" class="linkbtn" id="nmCancelar">Cancelar</button></div>
+      </form>
+      <div class="metas" id="metas"><div class="empty">As metas aparecem aqui assim que o banco responder.</div></div>
+    </section>
+    <p class="foot">Compras no cartão entram em "Gastou" na data da compra, mas só saem da conta quando você lança "Pagar fatura". Guardar numa meta também sai da conta.</p>
+    <div class="acoes small"><button type="button" class="linkbtn" id="backupBtn">Baixar backup (JSON)</button><button type="button" class="linkbtn" id="sairBtn">Sair</button></div>
+  </div>
+
+  <div class="view" id="view-lancar" hidden>
+    <div class="lancar-top">
+      <button type="button" class="back" id="voltarLancar">&#8249; Resumo</button>
+      <span class="small muted">Sobra agora <b class="num" id="sSobraMini" style="color: var(--ink); font-weight: 500">R$ 0,00</b></span>
+    </div>
+    <h2 id="addTitle" style="font-size: 1.6rem; font-weight: 700">Lançar</h2>
+    <div class="seg" role="group" aria-label="Tipo">
+      <button type="button" data-tipo="gasto" aria-pressed="true">Gasto</button>
+      <button type="button" data-tipo="entrada" aria-pressed="false">Entrada</button>
+      <button type="button" data-tipo="guardado" aria-pressed="false">Guardar</button>
+      <button type="button" data-tipo="fatura" aria-pressed="false">Fatura</button>
+    </div>
+    <form id="form" class="fields" novalidate>
+      <div class="valor-box ledger full"><label for="valor" id="valorLabel" class="label">Valor (R$)</label><input id="valor" class="money" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+      <div class="chips full" id="chips"></div>
+      <div class="field full"><label for="descricao">Descrição</label><input id="descricao" placeholder="Ex.: mercado, uber, almoço" autocomplete="off"></div>
+      <div class="field" id="catField"><label for="categoria">Categoria</label><select id="categoria"></select></div>
+      <div class="field" id="formaField"><label for="forma">Pago com</label><select id="forma"><option value="conta">Conta (Pix/débito)</option></select></div>
+      <div class="field"><label for="data">Data</label><input id="data" type="date"></div>
+      <div class="field" id="parcField"><label class="check" for="parcelado"><input type="checkbox" id="parcelado"> Parcelada</label></div>
+      <div class="field" id="parcAtualField" hidden><label for="parcAtual">Parcela atual</label><input id="parcAtual" type="number" min="1" value="1" inputmode="numeric"></div>
+      <div class="field" id="parcTotalField" hidden><label for="parcTotal">Total de parcelas</label><input id="parcTotal" type="number" min="2" value="10" inputmode="numeric"></div>
+      <div class="field full" id="cartaoField" hidden><label for="cartaoFat">Qual cartão</label><select id="cartaoFat"></select></div>
+      <div class="field full" id="metaField" hidden><label for="metaSel">Guardar na meta</label><select id="metaSel"></select></div>
+      <p class="hint full" id="formHint">No cartão: entra em "Gastou" na data da compra e só sai da conta quando a fatura for paga.</p>
+      <div class="salvar-bar full">
+        <button class="primary" id="salvar" type="submit">Salvar gasto</button>
+        <div class="formmsg" id="formMsg" aria-live="polite"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="view" id="view-extrato" hidden>
+    <button type="button" class="back" id="voltar">&#8249; Resumo</button>
+    <section class="panel" aria-labelledby="catTitle">
+      <h2 id="catTitle">Para onde foi</h2>
+      <div class="cats" id="cats"><div class="empty">Nenhum gasto lançado neste mês.</div></div>
+    </section>
+    <section class="panel" aria-labelledby="listTitle">
+      <h2 id="listTitle">Extrato do mês</h2>
+      <div class="list" id="list"><div class="empty">Nada lançado ainda. Comece pelo salário: toque em "Lançar", depois em "Entrada".</div></div>
+    </section>
+  </div>
+</div>
+
+<button type="button" class="fab" id="abrirLancar" hidden><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 3v12M3 9h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"></path></svg>Lançar</button>
+
+<script>
+(function () {
+  const CFG = window.CAIXA_CONFIG || {};
+  const CARDS = {};
+  (CFG.cartoes || []).forEach((c) => { CARDS[c.id] = c.nome; });
+  const CATS = CFG.categorias && CFG.categorias.length ? CFG.categorias : ["Alimentação", "Transporte", "Contas da casa", "Lazer", "Compras", "Outros"];
+  const CHIPS = {
+    gasto: (CFG.atalhos && CFG.atalhos.gasto) || [],
+    entrada: (CFG.atalhos && CFG.atalhos.entrada) || [],
+    guardado: [],
+    fatura: []
+  };
+  const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  const MONTHS = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
+  const DAYF = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => BRL.format(n || 0);
+
+  let db = null;
+  let lanc = [];      // all entries
+  let metas = [];     // goals
+  let tipo = "gasto";
+  let viewYM = ymOf(new Date());
+  let editing = null;
+  let pendingDel = null;
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function ymOf(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1); }
+  function todayISO() { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseMoney(s) {
+    if (!s) return NaN;
+    s = String(s).trim().replace(/[R$\s]/g, "");
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    return Math.round(parseFloat(s) * 100) / 100;
+  }
+  function shiftYM(ym, k) { const [y, m] = ym.split("-").map(Number); const d = new Date(y, m - 1 + k, 1); return ymOf(d); }
+  function monthsUntil(prazo) {
+    if (!prazo) return null;
+    const [y, m] = prazo.split("-").map(Number);
+    const now = new Date();
+    return (y - now.getFullYear()) * 12 + (m - (now.getMonth() + 1)) + 1;
+  }
+  function prazoLabel(prazo) {
+    if (!prazo) return "sem prazo";
+    const [y, m] = prazo.split("-").map(Number);
+    return MONTHS.format(new Date(y, m - 1, 1));
+  }
+
+  // ---------- form ----------
+  const sel = $("categoria");
+  CATS.forEach((c) => { const o = document.createElement("option"); o.value = c; o.textContent = c; sel.appendChild(o); });
+  $("data").value = todayISO();
+  Object.keys(CARDS).forEach((k) => {
+    [$("forma"), $("cartaoFat")].forEach((sl) => { const o = document.createElement("option"); o.value = k; o.textContent = CARDS[k]; sl.appendChild(o); });
+  });
+
+  function setTipo(t) {
+    tipo = t;
+    document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tipo === t)));
+    $("catField").hidden = t !== "gasto";
+    $("formaField").hidden = t !== "gasto";
+    $("parcField").hidden = t !== "gasto";
+    syncParc();
+    $("cartaoField").hidden = t !== "fatura";
+    $("formHint").hidden = t !== "gasto";
+    $("metaField").hidden = t !== "guardado";
+    $("salvar").textContent = { gasto: "Salvar gasto", entrada: "Salvar entrada", guardado: "Guardar na meta", fatura: "Registrar pagamento da fatura" }[t];
+    $("descricao").placeholder = t === "gasto" ? "Ex.: mercado, uber, almoço" : t === "entrada" ? "Ex.: salário, 13º, freela" : "Opcional";
+    renderChips();
+  }
+  document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => setTipo(b.dataset.tipo)));
+  function syncParc() {
+    const on = tipo === "gasto" && $("parcelado").checked;
+    $("parcAtualField").hidden = !on; $("parcTotalField").hidden = !on;
+    $("valorLabel").textContent = on ? "Valor de cada parcela (R$)" : "Valor (R$)";
+    $("data").previousElementSibling.textContent = on ? "Data desta parcela" : "Data";
+  }
+  $("parcelado").addEventListener("change", syncParc);
+  function addMonths(iso, k) {
+    const [y, m, d] = iso.split("-").map(Number);
+    const first = new Date(y, m - 1 + k, 1);
+    const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    return first.getFullYear() + "-" + pad(first.getMonth() + 1) + "-" + pad(Math.min(d, last));
+  }
+
+  function renderChips() {
+    const box = $("chips");
+    box.replaceChildren();
+    let list = CHIPS[tipo];
+    if (tipo === "fatura") list = Object.keys(CARDS).map((k) => { const v = abertoCartao(k); return v > 0 ? { t: CARDS[k] + " " + fmt(v), card: k, v } : null; }).filter(Boolean);
+    if (tipo === "guardado") list = metas.filter((m) => m.status !== "pausada" && m.status !== "concluida").map((m) => ({ t: m.nome, meta: m.id, v: m.sugestao || null }));
+    list.forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = c.t;
+      b.addEventListener("click", () => {
+        if (c.d) $("descricao").value = c.d;
+        if (c.c) sel.value = c.c;
+        if (c.v) $("valor").value = c.v.toFixed(2).replace(".", ",");
+        if (c.meta) $("metaSel").value = c.meta;
+        if (c.card) $("cartaoFat").value = c.card;
+        $("valor").focus();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function renderMetaSelect() {
+    const s = $("metaSel"); const cur = s.value;
+    s.replaceChildren();
+    metas.forEach((m) => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.nome + (m.status === "pausada" ? " (pausada)" : ""); s.appendChild(o); });
+    if (cur && metas.some((m) => m.id === cur)) s.value = cur;
+  }
+
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("formMsg");
+    if (!db) { msg.textContent = "Entre na sua conta pra lançar."; return; }
+    const valor = parseMoney($("valor").value);
+    if (!(valor > 0)) { msg.textContent = "Digite um valor maior que zero, por exemplo 45,90."; $("valor").focus(); return; }
+    const data = $("data").value || todayISO();
+    let descricao = $("descricao").value.trim();
+    const doc = { tipo, valor, data, criadoEm: new Date().toISOString() };
+    if (tipo === "gasto") { doc.categoria = sel.value; doc.forma = $("forma").value; if (!descricao) descricao = sel.value; }
+    if (tipo === "fatura") { doc.cartao = $("cartaoFat").value; if (!descricao) descricao = "Fatura " + CARDS[doc.cartao]; }
+    if (tipo === "guardado") {
+      const m = metas.find((x) => x.id === $("metaSel").value);
+      if (!m) { msg.textContent = "Escolha uma meta pra guardar."; return; }
+      doc.metaId = m.id; if (!descricao) descricao = "Guardado: " + m.nome;
+    }
+    if (tipo === "entrada" && !descricao) descricao = "Entrada";
+    doc.descricao = descricao;
+    const parc = tipo === "gasto" && $("parcelado").checked;
+    let k = 1, n = 1;
+    if (parc) {
+      k = parseInt($("parcAtual").value, 10); n = parseInt($("parcTotal").value, 10);
+      if (!(n >= 2) || !(k >= 1) || k > n || n > 48) { msg.textContent = "Confira as parcelas: a atual vai de 1 até o total, e o total vai até 48."; return; }
+    }
+    $("salvar").disabled = true;
+    try {
+      if (parc) {
+        const grupo = "p" + Date.now().toString(36);
+        const rows = [];
+        for (let i = k; i <= n; i++) {
+          rows.push(Object.assign({}, doc, { data: addMonths(data, i - k), descricao: descricao + " (" + i + "/" + n + ")", grupo, parcela: i, parcelas: n, base: descricao, criadoEm: new Date(Date.now() + i).toISOString() }));
+        }
+        await api.addLanc(rows);
+        msg.textContent = "Salvo: " + descricao + ", " + (n - k + 1) + " parcelas de " + fmt(valor) + " até " + prazoLabel(addMonths(data, n - k).slice(0, 7)) + ".";
+        $("parcelado").checked = false; syncParc();
+      } else {
+        await api.addLanc([doc]);
+        msg.textContent = "Salvo: " + descricao + ", " + fmt(valor) + ".";
+      }
+      $("valor").value = ""; $("descricao").value = "";
+      if (data.slice(0, 7) !== viewYM) { viewYM = data.slice(0, 7); render(); }
+    } catch (err) {
+      msg.textContent = "Não deu pra salvar agora. Confira a internet e tente de novo.";
+    } finally { $("salvar").disabled = false; }
+  });
+
+  $("prev").addEventListener("click", () => { viewYM = shiftYM(viewYM, -1); render(); });
+  $("next").addEventListener("click", () => { viewYM = shiftYM(viewYM, 1); render(); });
+
+  // ---------- render ----------
+  function guardadoDe(m) {
+    return (m.inicial || 0) + lanc.filter((l) => l.tipo === "guardado" && l.metaId === m.id).reduce((s, l) => s + l.valor, 0);
+  }
+
+  function isConta(l) { return !l.forma || l.forma === "conta"; }
+  function abertoCartao(k) {
+    const cur = ymOf(new Date());
+    const compras = lanc.filter((l) => l.tipo === "gasto" && l.forma === k && (l.data || "").slice(0, 7) <= cur).reduce((s, l) => s + l.valor, 0);
+    const pagos = lanc.filter((l) => l.tipo === "fatura" && l.cartao === k).reduce((s, l) => s + l.valor, 0);
+    return Math.round((compras - pagos) * 100) / 100;
+  }
+
+  function render() {
+    const [y, mo] = viewYM.split("-").map(Number);
+    $("monthLabel").textContent = MONTHS.format(new Date(y, mo - 1, 1));
+    const mes = lanc.filter((l) => (l.data || "").slice(0, 7) === viewYM);
+    const sum = (t) => mes.filter((l) => l.tipo === t).reduce((s, l) => s + l.valor, 0);
+    const ent = sum("entrada"), gas = sum("gasto"), gua = sum("guardado"), fat = sum("fatura");
+    const gasConta = mes.filter((l) => l.tipo === "gasto" && isConta(l)).reduce((s, l) => s + l.valor, 0);
+    $("sEntrou").textContent = fmt(ent);
+    $("sGastou").textContent = fmt(gas);
+    $("sGuardou").textContent = fmt(gua);
+    const abertos = Object.keys(CARDS).map((k) => [k, Math.max(abertoCartao(k), 0)]);
+    $("sFatura").textContent = fmt(abertos.reduce((x, a) => x + a[1], 0));
+    $("sFaturaSub").textContent = abertos.filter((a) => a[1] > 0).map((a) => CARDS[a[0]] + " " + fmt(a[1])).join(" · ");
+    const sobra = ent - gasConta - gua - fat;
+    $("sSobra").textContent = fmt(sobra);
+    $("sSobra").style.color = sobra < 0 ? "var(--out)" : "var(--ink)";
+    { const now = ymOf(new Date()); const mn = lanc.filter((l) => (l.data || "").slice(0, 7) === now); const sm = (t, f) => mn.filter((l) => l.tipo === t && (!f || f(l))).reduce((x, l) => x + l.valor, 0); $("sSobraMini").textContent = fmt(sm("entrada") - sm("gasto", isConta) - sm("guardado") - sm("fatura")); }
+    $("extratoCount").textContent = mes.length ? mes.length + (mes.length === 1 ? " lançamento" : " lançamentos") : "nenhum lançamento";
+    renderCats(mes, gas);
+    renderList(mes);
+    renderMetas();
+    renderComp();
+  }
+
+  function renderComp() {
+    const cur = ymOf(new Date());
+    const fut = lanc.filter((l) => l.tipo === "gasto" && l.grupo && (l.data || "").slice(0, 7) > cur);
+    // 6-month strip
+    const mbox = $("months"); mbox.replaceChildren();
+    const totals = [];
+    for (let i = 1; i <= 6; i++) { const ym = shiftYM(cur, i); totals.push([ym, fut.filter((l) => l.data.slice(0, 7) === ym).reduce((s, l) => s + l.valor, 0)]); }
+    const max = Math.max(1, ...totals.map((t) => t[1]));
+    totals.forEach(([ym, v]) => {
+      const [y, m] = ym.split("-").map(Number);
+      const c = document.createElement("div"); c.className = "mcell";
+      const col = document.createElement("div"); col.className = "col"; const bar = document.createElement("i"); bar.style.height = (v / max * 100).toFixed(1) + "%"; col.appendChild(bar);
+      const lab = document.createElement("span"); lab.textContent = new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(y, m - 1, 1)).replace(".", "");
+      const val = document.createElement("b"); val.textContent = v ? fmt(v).replace("R$", "").trim() : "—";
+      c.append(col, val, lab); mbox.appendChild(c);
+    });
+    // groups
+    const box = $("comp"); box.replaceChildren();
+    const groups = {};
+    fut.forEach((l) => { (groups[l.grupo] = groups[l.grupo] || []).push(l); });
+    const keys = Object.keys(groups);
+    if (!keys.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = 'Nenhuma parcela futura. Marque "Compra parcelada" ao lançar um gasto.'; box.appendChild(d); return; }
+    keys.map((g) => groups[g].sort((a, b) => a.data.localeCompare(b.data)))
+      .sort((a, b) => b[0].valor - a[0].valor)
+      .forEach((items) => {
+        const first = items[0], last = items[items.length - 1];
+        const r = document.createElement("div"); r.className = "comp-row";
+        const n = document.createElement("div"); n.textContent = first.base || first.descricao;
+        const v = document.createElement("div"); v.className = "num"; v.textContent = fmt(first.valor) + "/mês";
+        const ml = document.createElement("div"); ml.className = "meta-line";
+        const a = document.createElement("span"); a.textContent = items.length + (items.length === 1 ? " parcela restante" : " parcelas restantes") + " · " + (isConta(first) ? "conta" : (CARDS[first.forma] || "cartão")) + " · última em " + prazoLabel(last.data.slice(0, 7));
+        const del = document.createElement("button"); del.type = "button"; del.className = "linkbtn";
+        const confirming = pendingDel === "g:" + first.grupo;
+        del.textContent = confirming ? "Confirmar: apagar " + items.length + " parcelas futuras" : "Apagar parcelas futuras";
+        del.addEventListener("click", async () => {
+          if (!confirming) { pendingDel = "g:" + first.grupo; render(); setTimeout(() => { if (pendingDel === "g:" + first.grupo) { pendingDel = null; render(); } }, 4000); return; }
+          pendingDel = null;
+          try { await api.delLanc(items.map((it) => it.id)); } catch (e) { $("status").textContent = "Não deu pra apagar as parcelas. Tente de novo."; }
+        });
+        ml.append(a, del);
+        r.append(n, v, ml); box.appendChild(r);
+      });
+  }
+
+  function renderCats(mes, total) {
+    const box = $("cats"); box.replaceChildren();
+    const by = {};
+    mes.filter((l) => l.tipo === "gasto").forEach((l) => { by[l.categoria || "Outros"] = (by[l.categoria || "Outros"] || 0) + l.valor; });
+    const rows = Object.entries(by).sort((a, b) => b[1] - a[1]);
+    if (!rows.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = "Nenhum gasto lançado neste mês."; box.appendChild(d); return; }
+    const max = rows[0][1];
+    rows.forEach(([c, v]) => {
+      const r = document.createElement("div"); r.className = "cat";
+      const n = document.createElement("span"); n.textContent = c;
+      const b = document.createElement("div"); b.className = "bar"; const i = document.createElement("i"); i.style.width = (v / max * 100).toFixed(1) + "%"; b.appendChild(i);
+      const a = document.createElement("span"); a.className = "num"; a.textContent = fmt(v) + " · " + Math.round(v / total * 100) + "%";
+      r.append(n, b, a); box.appendChild(r);
+    });
+    const tot = document.createElement("div"); tot.className = "cat-total";
+    const tl = document.createElement("span"); tl.textContent = "Total";
+    const tv = document.createElement("span"); tv.className = "num"; tv.textContent = fmt(total);
+    tot.append(tl, tv); box.appendChild(tot);
+  }
+
+  function renderList(mes) {
+    const box = $("list"); box.replaceChildren();
+    if (!mes.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = 'Nada lançado neste mês. Comece pelo salário: toque em "Entrada" e no atalho do salário.'; box.appendChild(d); return; }
+    const sorted = mes.slice().sort((a, b) => (b.data + (b.criadoEm || "")).localeCompare(a.data + (a.criadoEm || "")));
+    let lastDay = null;
+    sorted.forEach((l) => {
+      if (l.data !== lastDay) {
+        lastDay = l.data;
+        const [yy, mm, dd] = l.data.split("-").map(Number);
+        const h = document.createElement("div"); h.className = "day"; h.textContent = DAYF.format(new Date(yy, mm - 1, dd)); box.appendChild(h);
+      }
+      const r = document.createElement("div"); r.className = "row";
+      const d = document.createElement("div"); d.className = "d";
+      const t1 = document.createElement("div"); t1.textContent = l.descricao || "—";
+      const t2 = document.createElement("div");
+      if (l.data > todayISO() && l.tipo === "gasto") t1.textContent += " · prevista";
+      if (l.tipo === "gasto") t2.textContent = (l.categoria || "Outros") + (isConta(l) ? "" : " · " + (CARDS[l.forma] || "Cartão"));
+      else if (l.tipo === "entrada") t2.textContent = "Entrada";
+      else if (l.tipo === "fatura") t2.textContent = "Pagamento de fatura, sai da conta";
+      else { const m = metas.find((x) => x.id === l.metaId); t2.textContent = "Guardado em " + (m ? m.nome : "meta removida"); }
+      d.append(t1, t2);
+      const a = document.createElement("span"); a.className = "amt " + l.tipo; a.textContent = ({ entrada: "+ ", gasto: "− ", guardado: "→ ", fatura: "= " }[l.tipo] || "− ") + fmt(l.valor);
+      if (l.tipo === "gasto" && l.data > todayISO()) a.classList.add("prevista");
+      if (l.tipo === "gasto" && !isConta(l)) a.title = "No cartão: só sai da conta quando a fatura for paga";
+      const x = document.createElement("button"); x.type = "button"; x.className = "del";
+      const confirming = pendingDel === l.id;
+      x.textContent = confirming ? "Apagar?" : "✕";
+      if (confirming) x.classList.add("confirm");
+      x.setAttribute("aria-label", confirming ? "Confirmar: apagar " + (l.descricao || "lançamento") : "Apagar " + (l.descricao || "lançamento"));
+      x.addEventListener("click", async () => {
+        if (pendingDel !== l.id) { pendingDel = l.id; render(); setTimeout(() => { if (pendingDel === l.id) { pendingDel = null; render(); } }, 4000); return; }
+        pendingDel = null;
+        try { await api.delLanc([l.id]); } catch (e) { $("status").textContent = "Não deu pra apagar agora. Tente de novo."; }
+      });
+      r.append(d, a, x); box.appendChild(r);
+    });
+  }
+
+  function renderMetas() {
+    const box = $("metas"); box.replaceChildren();
+    if (!metas.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = db ? 'Nenhuma meta ainda. Toque em "+ Nova meta" pra criar a primeira, por exemplo uma reserva de emergência.' : "As metas aparecem aqui depois do login."; box.appendChild(d); return; }
+    metas.forEach((m, idx) => {
+      const g = guardadoDe(m);
+      const falta = Math.max((m.alvo || 0) - g, 0);
+      const pct = m.alvo ? Math.min(g / m.alvo * 100, 100) : 0;
+      const mesesRest = monthsUntil(m.prazo);
+      let pill = "", pillCls = "";
+      if (m.status === "concluida" || (m.alvo && g >= m.alvo)) { pill = "Concluída"; pillCls = "ok"; }
+      else if (m.status === "pausada") { pill = "Pausada"; pillCls = "paused"; }
+      else if (mesesRest !== null && mesesRest <= 0) { pill = "Prazo vencido"; pillCls = "late"; }
+      else if (mesesRest !== null) { pill = fmt(falta / mesesRest) + "/mês"; pillCls = ""; }
+      else { pill = "Sem prazo"; pillCls = "quiet"; }
+
+      const el = document.createElement("div"); el.className = "meta" + (m.status === "pausada" ? " paused" : "");
+      const head = document.createElement("div"); head.className = "meta-head";
+      const name = document.createElement("div"); name.className = "meta-name";
+      const ord = document.createElement("span"); ord.className = "ord"; ord.textContent = (idx + 1) + ".";
+      const nm = document.createElement("span"); nm.textContent = m.nome;
+      name.append(ord, nm);
+      const p = document.createElement("span"); p.className = "pill " + pillCls; p.textContent = pill;
+      head.append(name, p);
+
+      const bar = document.createElement("div"); bar.className = "prog"; bar.setAttribute("role", "progressbar"); bar.setAttribute("aria-valuenow", Math.round(pct)); bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100"); bar.setAttribute("aria-label", m.nome);
+      const fill = document.createElement("i"); fill.style.width = pct.toFixed(1) + "%"; bar.appendChild(fill);
+
+      const foot = document.createElement("div"); foot.className = "meta-foot";
+      const left = document.createElement("span");
+      left.innerHTML = '<b class="num"></b> de <span class="num"></span>';
+      left.querySelectorAll(".num")[0].textContent = fmt(g);
+      left.querySelectorAll(".num")[1].textContent = fmt(m.alvo);
+      const right = document.createElement("span"); right.textContent = (falta > 0 ? "faltam " + fmt(falta) + " · " : "") + prazoLabel(m.prazo);
+      foot.append(left, right);
+
+      el.append(head, bar, foot);
+      if (m.nota) { const n = document.createElement("div"); n.className = "small muted"; n.textContent = m.nota; el.appendChild(n); }
+
+      if (editing === m.id) el.appendChild(editForm(m));
+      else {
+        const eb = document.createElement("button"); eb.type = "button"; eb.className = "linkbtn"; eb.textContent = "Editar meta";
+        eb.style.justifySelf = "start";
+        eb.addEventListener("click", () => { editing = m.id; render(); });
+        el.appendChild(eb);
+      }
+      box.appendChild(el);
+    });
+  }
+
+  function editForm(m) {
+    const f = document.createElement("form"); f.className = "edit";
+    const mk = (id, label, val, type, extra) => {
+      const w = document.createElement("div"); w.className = "field";
+      const l = document.createElement("label"); l.htmlFor = id; l.textContent = label;
+      const i = document.createElement(type === "select" ? "select" : "input"); i.id = id;
+      if (type === "select") extra.forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; i.appendChild(o); });
+      else { i.type = type; if (type === "text") i.inputMode = "decimal"; }
+      i.value = val; w.append(l, i); return w;
+    };
+    f.append(
+      mk("eAlvo-" + m.id, "Alvo (R$)", String(m.alvo || "").replace(".", ","), "text"),
+      mk("eIni-" + m.id, "Já tinha (R$)", String(m.inicial || 0).replace(".", ","), "text"),
+      mk("ePrazo-" + m.id, "Prazo", m.prazo || "", "month"),
+      mk("eStatus-" + m.id, "Situação", m.status || "ativa", "select", [["ativa", "Ativa"], ["pausada", "Pausada"], ["concluida", "Concluída / paga"]])
+    );
+    const acts = document.createElement("div"); acts.className = "acts";
+    const ok = document.createElement("button"); ok.type = "submit"; ok.className = "primary small-btn"; ok.textContent = "Salvar";
+    const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "linkbtn"; cancel.textContent = "Cancelar";
+    cancel.addEventListener("click", () => { editing = null; render(); });
+    const delM = document.createElement("button"); delM.type = "button"; delM.className = "linkbtn"; delM.style.color = "var(--out)";
+    const delConf = pendingDel === "m:" + m.id;
+    delM.textContent = delConf ? "Confirmar: excluir meta" : "Excluir meta";
+    delM.addEventListener("click", async () => {
+      if (!delConf) { pendingDel = "m:" + m.id; render(); setTimeout(() => { if (pendingDel === "m:" + m.id) { pendingDel = null; render(); } }, 4000); return; }
+      pendingDel = null; editing = null;
+      try { await api.delMeta(m.id); } catch (e) { $("status").textContent = "Não deu pra excluir a meta. Tente de novo."; }
+    });
+    acts.append(ok, cancel, delM);
+    f.appendChild(acts);
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const alvo = parseMoney(f.querySelector("#eAlvo-" + CSS.escape(m.id)).value);
+      const ini = parseMoney(f.querySelector("#eIni-" + CSS.escape(m.id)).value);
+      const prazo = f.querySelector("#ePrazo-" + CSS.escape(m.id)).value || null;
+      const status = f.querySelector("#eStatus-" + CSS.escape(m.id)).value;
+      ok.disabled = true;
+      try {
+        await api.updateMeta(m.id, { alvo: alvo > 0 ? alvo : 0, inicial: ini > 0 ? ini : 0, prazo, status });
+        editing = null; render();
+      } catch (err) { ok.disabled = false; $("status").textContent = "Não deu pra salvar a meta. Tente de novo."; }
+    });
+    return f;
+  }
+
+
+  // ---------- views ----------
+  function showView(v, focusEl) {
+    ["login", "main", "lancar", "extrato"].forEach((k) => { $("view-" + k).hidden = k !== v; });
+    $("abrirLancar").hidden = v === "lancar" || v === "login";
+    $("monthnav").style.visibility = v === "lancar" || v === "login" ? "hidden" : "visible";
+    window.scrollTo(0, 0);
+    if (focusEl) $(focusEl).focus();
+  }
+  $("abrirExtrato").addEventListener("click", () => showView("extrato", "voltar"));
+  $("voltar").addEventListener("click", () => showView("main", "abrirExtrato"));
+  $("abrirLancar").addEventListener("click", () => showView("lancar", "valor"));
+  $("voltarLancar").addEventListener("click", () => showView("main", "abrirLancar"));
+  let startView = (location.hash || "").slice(1);
+  if (startView !== "extrato" && startView !== "lancar") startView = "main";
+  setTipo("gasto");
+  render();
+
+  // ---------- nova meta ----------
+  $("novaMetaBtn").addEventListener("click", () => { $("novaMetaForm").hidden = false; $("nmNome").focus(); });
+  $("nmCancelar").addEventListener("click", () => { $("novaMetaForm").hidden = true; });
+  $("novaMetaForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nome = $("nmNome").value.trim();
+    const alvo = parseMoney($("nmAlvo").value);
+    const ini = parseMoney($("nmIni").value);
+    if (!nome || !(alvo > 0)) { $("status").textContent = "Dê um nome à meta e um alvo maior que zero."; return; }
+    const ordem = metas.reduce((x, m) => Math.max(x, m.ordem || 0), 0) + 1;
+    try {
+      await api.addMeta({ nome, alvo, inicial: ini > 0 ? ini : 0, prazo: $("nmPrazo").value || null, status: "ativa", ordem });
+      $("status").textContent = "";
+      $("novaMetaForm").reset(); $("novaMetaForm").hidden = true;
+    } catch (err) { $("status").textContent = "Não deu pra criar a meta. Tente de novo."; }
+  });
+
+  // ---------- backup ----------
+  $("backupBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ exportadoEm: new Date().toISOString(), metas, lancamentos: lanc }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "caixa-backup-" + todayISO() + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  // ---------- Supabase ----------
+  const num = (v) => (v === null || v === undefined ? null : Number(v));
+  function fromLanc(r) {
+    return { id: r.id, tipo: r.tipo, valor: num(r.valor), data: r.data, descricao: r.descricao, categoria: r.categoria, forma: r.forma, cartao: r.cartao, metaId: r.meta_id, grupo: r.grupo, parcela: r.parcela, parcelas: r.parcelas, base: r.base, criadoEm: r.criado_em };
+  }
+  function toLanc(o) {
+    const r = { tipo: o.tipo, valor: o.valor, data: o.data, descricao: o.descricao || null, categoria: o.categoria || null, forma: o.forma || null, cartao: o.cartao || null, meta_id: o.metaId || null, grupo: o.grupo || null, parcela: o.parcela || null, parcelas: o.parcelas || null, base: o.base || null };
+    if (o.criadoEm) r.criado_em = o.criadoEm;
+    return r;
+  }
+  function fromMeta(r) {
+    return { id: r.id, nome: r.nome, alvo: num(r.alvo), inicial: num(r.inicial), prazo: r.prazo, status: r.status, ordem: r.ordem, nota: r.nota, sugestao: num(r.sugestao) };
+  }
+
+  const configurado = CFG.supabaseUrl && CFG.supabaseAnonKey && !/SEU-PROJETO|SUA-CHAVE-PUBLICA/.test(CFG.supabaseUrl + CFG.supabaseAnonKey);
+  const sb = configurado && window.supabase ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
+  let canal = null;
+
+  function check(res) { if (res.error) throw res.error; return res.data; }
+  const api = {
+    async loadAll() {
+      const [l, m] = await Promise.all([
+        sb.from("lancamentos").select("*").order("data", { ascending: true }).limit(10000),
+        sb.from("metas").select("*").order("ordem", { ascending: true })
+      ]);
+      lanc = check(l).map(fromLanc);
+      metas = check(m).map(fromMeta);
+      renderMetaSelect(); renderChips(); render();
+    },
+    async addLanc(list) { check(await sb.from("lancamentos").insert(list.map(toLanc))); await api.loadAll(); },
+    async delLanc(ids) { check(await sb.from("lancamentos").delete().in("id", ids)); await api.loadAll(); },
+    async addMeta(m) { check(await sb.from("metas").insert(m)); await api.loadAll(); },
+    async updateMeta(id, patch) { check(await sb.from("metas").update(patch).eq("id", id)); await api.loadAll(); },
+    async delMeta(id) { check(await sb.from("metas").delete().eq("id", id)); await api.loadAll(); }
+  };
+
+  let recarga = null;
+  function agendarRecarga() { clearTimeout(recarga); recarga = setTimeout(() => { if (db) api.loadAll().catch(() => {}); }, 400); }
+
+  async function entrarNoApp() {
+    db = sb;
+    $("status").textContent = "Carregando…";
+    showView(startView);
+    try {
+      await api.loadAll();
+      $("status").textContent = "";
+    } catch (e) {
+      $("status").textContent = "Não consegui carregar seus dados. Confira a internet e recarregue a página.";
+    }
+    if (!canal) {
+      canal = sb.channel("caixa")
+        .on("postgres_changes", { event: "*", schema: "public", table: "lancamentos" }, agendarRecarga)
+        .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, agendarRecarga)
+        .subscribe();
+    }
+  }
+
+  function sairDoApp() {
+    db = null; lanc = []; metas = [];
+    if (canal) { sb.removeChannel(canal); canal = null; }
+    renderMetaSelect(); render();
+    $("status").textContent = "";
+    showView("login");
+  }
+
+  $("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = $("loginMsg");
+    const email = $("email").value.trim(), password = $("senha").value;
+    if (!email || !password) { msg.textContent = "Preencha e-mail e senha."; return; }
+    $("entrar").disabled = true; msg.textContent = "";
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    $("entrar").disabled = false;
+    if (error) msg.textContent = "E-mail ou senha incorretos.";
+    else $("senha").value = "";
+  });
+  $("sairBtn").addEventListener("click", () => { sb.auth.signOut(); });
+
+  if (!sb) {
+    showView("login");
+    $("entrar").disabled = true;
+    $("status").textContent = window.supabase ? "Falta configurar o Supabase no arquivo config.js (veja o README)." : "Não consegui carregar a biblioteca do Supabase. Confira a internet e recarregue.";
+  } else {
+    $("status").textContent = "";
+    let logado = null;
+    sb.auth.onAuthStateChange((event, session) => {
+      const agora = !!session;
+      if (agora === logado) return;
+      logado = agora;
+      setTimeout(() => { if (agora) entrarNoApp(); else sairDoApp(); }, 0);
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "Caixa",
+  "short_name": "Caixa",
+  "description": "Livro-caixa pessoal: quanto entrou, pra onde foi, quanto sobrou.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF2EA",
+  "theme_color": "#25603F",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
