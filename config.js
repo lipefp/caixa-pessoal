@@ -9,7 +9,8 @@ window.CAIXA_CONFIG = {
   // Cartões de crédito. O "id" fica gravado nos lançamentos: escolha uma vez e não mude.
   cartoes: [
     { id: "santander", nome: "Cartão Santander" },
-    { id: "nubank", nome: "Cartão Nubank" }
+    { id: "nubank", nome: "Cartão Nubank" },
+    { id: "emprestado", nome: "Cartão emprestado" }
   ],
 
   categorias: ["Alimentação", "Transporte", "Pessoal", "Lazer", "Compras", "Assinaturas", "Contas da casa", "Estudos", "Saúde", "Outros"],
