@@ -1,5 +1,9 @@
 # Caixa
 
+> **Projeto pessoal em construção.** Uso ele no meu dia a dia, mas ainda estou
+> ajustando partes do código e revisando decisões de implementação. Não
+> recomendo usar como base para nada em produção.
+
 Livro-caixa pessoal pro celular. Responde três perguntas: quanto sobrou na conta este mês, pra onde o dinheiro foi e quanto falta pra cada objetivo.
 
 <p>
