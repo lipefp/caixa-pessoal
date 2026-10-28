@@ -15,6 +15,10 @@ window.CAIXA_CONFIG = {
 
   categorias: ["Alimentação", "Transporte", "Pessoal", "Lazer", "Compras", "Assinaturas", "Contas da casa", "Estudos", "Saúde", "Outros"],
 
+  // Regras extras pra importar extrato: se a descrição contém o texto, usa a categoria.
+  // Ex.: { contem: "ACADEMIA", categoria: "Saúde" }. Este arquivo é público: não coloque nomes de pessoas.
+  regras: [],
+
   // Atalhos que aparecem acima do formulário. "v" (valor) e "c" (categoria) são opcionais.
   atalhos: {
     gasto: [
