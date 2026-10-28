@@ -1,9 +1,5 @@
 # Caixa
 
-> **Projeto pessoal em construção.** Uso ele no meu dia a dia, mas ainda estou
-> ajustando partes do código e revisando decisões de implementação. Não
-> recomendo usar como base para nada em produção.
-
 Livro-caixa pessoal pro celular. Responde três perguntas: quanto sobrou na conta este mês, pra onde o dinheiro foi e quanto falta pra cada objetivo.
 
 <p>
@@ -18,6 +14,10 @@ Livro-caixa pessoal pro celular. Responde três perguntas: quanto sobrou na cont
 - **Parcelamentos:** lance "parcela 3 de 10" uma vez e as próximas parcelas aparecem nos meses certos. Um quadro mostra quanto já está comprometido nos próximos 6 meses.
 - **Metas:** alvo, prazo e quanto guardar por mês pra chegar lá.
 - **Extrato e categorias** de cada mês.
+- **Importar extrato:** lê o PDF do extrato da conta (testado com o do Santander), OFX ou CSV, sugere a categoria de cada linha e deixa de fora o que já foi lançado. Nada é salvo antes de você conferir.
+- **Contas fixas:** cadastre o que se repete todo mês e lance tudo com um toque.
+- **Teto semanal:** mostra quanto do dia a dia já foi gasto na semana. Contas fixas e parcelas não entram nessa conta.
+- **Editar lançamento:** toque na descrição no extrato.
 - **Backup** em JSON a qualquer momento.
 
 Cada valor tem cor e sinal próprios: `+` entrada, `−` gasto, `→` guardado, `=` pagamento de fatura. Parcelas futuras aparecem com contorno tracejado.
@@ -40,7 +40,7 @@ Cada valor tem cor e sinal próprios: `+` entrada, `−` gasto, `→` guardado, 
 ### 1. Criar o projeto no Supabase
 
 1. Crie uma conta em supabase.com e um projeto novo (o plano gratuito basta).
-2. Abra **SQL Editor**, cole o conteúdo de `supabase/schema.sql` e rode.
+2. Abra **SQL Editor**, cole o conteúdo de `supabase/schema.sql` e rode. Depois faça o mesmo com `supabase/002-fixas-teto-importacao.sql`.
 
 ### 2. Criar seu usuário
 
@@ -81,16 +81,20 @@ python3 -m http.server 8000
 index.html             app inteiro (HTML, CSS e JS)
 config.js              URL do Supabase, chave anon, cartões, categorias e atalhos
 supabase/schema.sql    tabelas, índices, Row Level Security e tempo real
+supabase/002-*.sql     contas fixas, teto semanal e campos de importação
 manifest.webmanifest   instalação na tela inicial
 icon.svg               ícone
 ```
 
 ## Próximos passos
 
-- [ ] Editar um lançamento sem precisar apagar e lançar de novo
-- [ ] Importar o extrato do banco (OFX/CSV)
+- [ ] Importar a fatura do cartão em PDF
 - [ ] API própria em Django REST como alternativa ao Supabase
 - [ ] Gráfico de evolução da sobra mês a mês
+
+## Créditos
+
+Construído com auxílio do Claude (Anthropic).
 
 ## Licença
 
